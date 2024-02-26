@@ -1,0 +1,102 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from datetime import datetime, timedelta
+
+class WebsiteBlockerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Website Blocker")
+        self.root.geometry("400x300")
+
+        self.user_credentials = {'user1': 'password1', 'user2': 'password2'}
+        self.blocked_websites = {}
+
+        self.create_login_page()
+
+    def create_login_page(self):
+        self.login_frame = ttk.Frame(self.root)
+        self.login_frame.pack(padx=20, pady=40)
+
+        ttk.Label(self.login_frame, text="Username:").grid(row=0, column=0, sticky=tk.E)
+        self.username_entry = ttk.Entry(self.login_frame)
+        self.username_entry.grid(row=0, column=1)
+
+        ttk.Label(self.login_frame, text="Password:").grid(row=1, column=0, sticky=tk.E)
+        self.password_entry = ttk.Entry(self.login_frame, show="*")
+        self.password_entry.grid(row=1, column=1)
+
+        login_button = ttk.Button(self.login_frame, text="Login", command=self.validate_login)
+        login_button.grid(row=2, column=1, pady=10)
+
+    def validate_login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if username in self.user_credentials and self.user_credentials[username] == password:
+            self.username_entry.delete(0, tk.END)
+            self.password_entry.delete(0, tk.END)
+            self.create_dashboard()
+        else:
+            messagebox.showerror("Login Error", "Invalid username or password")
+
+    def create_dashboard(self):
+        self.login_frame.destroy()
+
+        self.dashboard_frame = ttk.Frame(self.root)
+        self.dashboard_frame.pack(padx=20, pady=40)
+
+        ttk.Label(self.dashboard_frame, text="Website Blocker Dashboard").grid(row=0, column=0, columnspan=3)
+
+        ttk.Label(self.dashboard_frame, text="Enter Website:").grid(row=1, column=0, sticky=tk.E)
+        self.website_entry = ttk.Entry(self.dashboard_frame)
+        self.website_entry.grid(row=1, column=1)
+
+        ttk.Label(self.dashboard_frame, text="Duration (minutes):").grid(row=1, column=2, sticky=tk.E)
+        self.duration_entry = ttk.Entry(self.dashboard_frame)
+        self.duration_entry.grid(row=1, column=3)
+
+        block_button = ttk.Button(self.dashboard_frame, text="Block Website", command=self.block_website)
+        block_button.grid(row=2, column=1, pady=10)
+
+        unblock_button = ttk.Button(self.dashboard_frame, text="Unblock Website", command=self.unblock_website)
+        unblock_button.grid(row=2, column=2, pady=10)
+
+        ttk.Label(self.dashboard_frame, text="Blocked Websites:").grid(row=3, column=0, sticky=tk.E)
+        self.blocked_websites_listbox = tk.Listbox(self.dashboard_frame, selectmode=tk.SINGLE)
+        self.blocked_websites_listbox.grid(row=3, column=1, columnspan=2)
+        self.update_blocked_websites_listbox()
+
+    def block_website(self):
+        website = self.website_entry.get()
+        duration_str = self.duration_entry.get()
+
+        if website and duration_str.isdigit():
+            duration = int(duration_str)
+            end_time = datetime.now() + timedelta(minutes=duration)
+            self.blocked_websites[website] = end_time
+            self.update_blocked_websites_listbox()
+            self.website_entry.delete(0, tk.END)
+            self.duration_entry.delete(0, tk.END)
+        else:
+            messagebox.showwarning("Error", "Please enter a website and a valid duration (in minutes)")
+
+    def unblock_website(self):
+        selected_index = self.blocked_websites_listbox.curselection()
+        if selected_index:
+            selected_website = self.blocked_websites_listbox.get(selected_index[0])
+            del self.blocked_websites[selected_website]
+            self.update_blocked_websites_listbox()
+        else:
+            messagebox.showwarning("Error", "Please select a website to unblock")
+
+    def update_blocked_websites_listbox(self):
+        self.blocked_websites_listbox.delete(0, tk.END)
+        for website, end_time in self.blocked_websites.items():
+            remaining_time = max(0, (end_time - datetime.now()).seconds // 60)
+            display_text = f"{website} (Blocked for {remaining_time} min)"
+            self.blocked_websites_listbox.insert(tk.END, display_text)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = WebsiteBlockerApp(root)
+    root.mainloop()
